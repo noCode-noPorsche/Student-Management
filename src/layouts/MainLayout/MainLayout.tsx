@@ -49,7 +49,7 @@ export default function MainLayout({ children }: Props) {
           <div className='mt-auto'>
             ©️ Copyright{' '}
             <a target='_blank' rel='noreferrer' className='text-cyan-500'>
-              duthanhduoc.com
+              tsantriduc@gmail.com
             </a>
           </div>
         </div>

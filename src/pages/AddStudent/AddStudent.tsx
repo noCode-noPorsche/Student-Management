@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addStudent, getStudent, updateStudent } from 'apis/students.api'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMatch, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Student } from 'types/students.type'
@@ -35,19 +35,30 @@ export default function AddStudent() {
   const match = useMatch('/students/add')
   const isAddMode = Boolean(match)
   const { id } = useParams()
+  const queryClient = useQueryClient()
 
-  useQuery({
+  const studentQuery = useQuery({
     queryKey: ['student', id],
     queryFn: () =>
       getStudent(id as string).then((res) => {
         setFormState(res.data)
         return res
       }),
-    enabled: id !== undefined
+    enabled: id !== undefined,
+    staleTime: 10 * 1000
   })
 
+  useEffect(() => {
+    if (studentQuery.data) {
+      setFormState(studentQuery.data.data)
+    }
+  }, [studentQuery.data])
+
   const updateStudentMutation = useMutation({
-    mutationFn: (_) => updateStudent(id as string, formState as Student)
+    mutationFn: (_) => updateStudent(id as string, formState as Student),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['student', id], data)
+    }
   })
 
   const addStudentMutation = useMutation({
@@ -82,13 +93,11 @@ export default function AddStudent() {
       })
     } else {
       updateStudentMutation.mutate(undefined, {
-        onSuccess: (data) => {
-          // console.log(data)
+        onSuccess: () => {
           toast.success('Update thành công!')
         }
       })
     }
-
     // try {
     //   await mutateAsync(formState)
     //   setFormState(initialFormState)

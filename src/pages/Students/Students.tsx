@@ -1,5 +1,5 @@
-import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
-import { deleteStudent, getStudents } from 'apis/students.api'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { deleteStudent, getStudent, getStudents } from 'apis/students.api'
 import classNames from 'classnames'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -22,6 +22,7 @@ export default function Students() {
   //     })
   // }, [])
   const queryString: { page?: string } = useQueryString()
+  const queryClient = useQueryClient()
   const page = Number(queryString.page) || 1
 
   const getStudentsQuery = useQuery({
@@ -34,6 +35,7 @@ export default function Students() {
     mutationFn: (id: number | string) => deleteStudent(id),
     onSuccess(_, id) {
       toast.success(`Delete thành công ${id}`)
+      queryClient.invalidateQueries({ queryKey: ['students', page], exact: true })
     }
   })
 
@@ -42,6 +44,14 @@ export default function Students() {
 
   const handleDeleteStudent = (id: number) => {
     deleteStudentMutation.mutate(id)
+  }
+
+  const handlePrefetchStudent = (id: number) => {
+    queryClient.prefetchQuery({
+      queryKey: ['student', String(id)],
+      queryFn: () => getStudent(id),
+      staleTime: 10 * 1000
+    })
   }
 
   return (
@@ -99,6 +109,7 @@ export default function Students() {
               <tbody>
                 {getStudentsQuery.data?.data.map((student) => (
                   <tr
+                    onMouseEnter={() => handlePrefetchStudent(student.id)}
                     key={student.id}
                     className='border-b bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-600'
                   >
