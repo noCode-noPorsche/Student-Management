@@ -27,7 +27,17 @@ export default function Students() {
 
   const getStudentsQuery = useQuery({
     queryKey: ['students', page],
-    queryFn: () => getStudents(page, LIMIT),
+    //cách hủy fetching data tự động khi quá lâu
+    queryFn: () => {
+      const controller = new AbortController()
+      setTimeout(() => {
+        controller.abort()
+      }, 10000)
+      return getStudents(page, LIMIT, controller.signal)
+    },
+    //cách thủ công khi nhấn nút button
+    //queryFn: ({ signal }) => getStudents(page, LIMIT, signal)
+    retry: 1, // số lần fetching lại API nếu bị lỗi
     placeholderData: keepPreviousData
   })
 
@@ -54,9 +64,26 @@ export default function Students() {
     })
   }
 
+  const refetchStudents = () => {
+    getStudentsQuery.refetch()
+  }
+
+  const cancelRequestStudents = () => {
+    queryClient.cancelQueries({
+      queryKey: ['students', page]
+    })
+  }
+
   return (
     <div>
       <h1 className='text-lg'>Students</h1>
+      <button onClick={refetchStudents} className='mt-6 rounded bg-blue-700 px-5 py-2 text-white'>
+        Refetch
+      </button>
+      <button onClick={cancelRequestStudents} className='mt-6 ml-2 rounded bg-red-700 px-5 py-2 text-white'>
+        Cancel
+      </button>
+      <div className='mt-6'></div>
       <div className='mt-6'>
         <Link
           to='/students/add'
